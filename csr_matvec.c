@@ -30,9 +30,20 @@ int main() {
     const int num_cols = 4;
     const int nnz = 9;
     
-    int row_ptr[] = {0, 2, 4, 7, 9};
-    int col_idx[] = {0, 1, 0, 2, 1, 2, 3, 2, 3};
-    float values[] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0};
+    /* Exemple nvidia
+      [1 0 2 3] [1]   [19]
+      [0 4 0 0] [2] = [ 8]
+      [5 0 6 7] [3]   [51]
+      [0 8 0 9] [4]   [52]
+    */
+    
+    int  row_ptr[] = {0, 3, 4, 7, 9};
+    int  col_idx[] = {0, 2, 3, 1, 0, 2, 3, 1, 3};
+    float values[] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+    
+    //int  row_ptr[] = {0, 2, 4, 7, 9};
+    //int  col_idx[] = {0, 1, 0, 2, 1, 2, 3, 2, 3};
+    //float values[] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0};
     float vector[] = {1.0, 2.0, 3.0, 4.0};
     float result[num_rows];
     
@@ -60,7 +71,7 @@ int main() {
         printf("Erreur : Impossible d'obtenir le GPU.\n");
         return -1;
     }
-
+    
     context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
     queue   = clCreateCommandQueue(context, device, 0, &err);
 
@@ -79,9 +90,9 @@ int main() {
         free(log);
         return -1;
     }
-
+    
     cl_kernel kernel = clCreateKernel(program, "csr_matvec", &err);
-
+    
     // Création des buffers
     cl_mem row_buf = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, (num_rows+1) * sizeof(int)  , row_ptr, &err);
     cl_mem col_buf = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, nnz          * sizeof(int)  , col_idx, &err);
@@ -96,7 +107,7 @@ int main() {
     clSetKernelArg(kernel, 3, sizeof(cl_mem), &vec_buf );
     clSetKernelArg(kernel, 4, sizeof(cl_mem), &res_buf );
     clSetKernelArg(kernel, 5, sizeof(int)   , &num_rows);
-
+    
     // Exécution du kernel
     size_t global_size = num_rows;
     err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
@@ -109,7 +120,7 @@ int main() {
     for (int i = 0; i < num_rows; i++) {
         printf("%f\n", result[i]);
     }
-
+    
     // Libération des ressources
     clReleaseMemObject(row_buf);
     clReleaseMemObject(col_buf);
